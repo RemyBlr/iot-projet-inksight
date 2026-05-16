@@ -1,0 +1,56 @@
+# Python
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+playwright>=1.44.0          # Rendu HTML → PNG
+aiomqtt>=1.2.0              # Client MQTT async
+python-multipart>=0.0.9     # Upload fichiers FastAPI
+icalendar>=5.0.0            # Parser ICS plus robuste
+pillow>=10.3.0              # Conversion PNG → BMP 1-bit pour l'ESP32
+python-dotenv>=1.0.0        # Lecture du fichier .env
+
+# ══════════════════════════════════════════════════════════════════════════
+# INSTALLATION MAC (dev)
+# ══════════════════════════════════════════════════════════════════════════
+#
+# 1. Dépendances Python
+#    pip install -r requirements.txt
+#    playwright install chromium
+#
+# 2. MQTT broker
+#    brew install mosquitto
+#    brew services start mosquitto
+#
+# 3. Copier et éditer la config
+#    cp .env.example .env
+#    # Laisser ENV=mac, HOST_IP=localhost
+#
+# 4. Lancer
+#    python main.py
+#    → http://localhost:8000
+#
+# ══════════════════════════════════════════════════════════════════════════
+# INSTALLATION RASPBERRY PI 5 (prod)
+# ══════════════════════════════════════════════════════════════════════════
+#
+# 1. pip install -r requirements.txt
+#    playwright install chromium
+#    playwright install-deps chromium
+#
+# 2. sudo apt install mosquitto mosquitto-clients
+#    sudo systemctl enable mosquitto && sudo systemctl start mosquitto
+#
+# 3. cp .env.example .env
+#    # Mettre ENV=pi, HOST_IP=<IP fixe du Pi>
+#
+# 4. python main.py
+#
+# ─── Nano RP2040 (MicroPython) ────────────────────────────────────────────
+# Flasher MicroPython : https://micropython.org/download/ARDUINO_NANO_RP2040_CONNECT/
+# mpremote connect /dev/ttyACM0 mip install umqtt.simple
+# mpremote connect /dev/ttyACM0 cp firmware/nano_rp2040_sensor.py :main.py
+#
+# ─── ESP32 / TRMNL (Arduino) ──────────────────────────────────────────────
+# Librairies Arduino IDE :
+#   - GxEPD2 by Jean-Marc Zingg
+#   - ArduinoJson by Benoit Blanchon
+# Board : ESP32 Dev Module (ou la board TRMNL spécifique si dispo)
