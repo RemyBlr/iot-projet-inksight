@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InkSight — Gestion</title>
+<link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">InkSight <span>/ pi dashboard</span></div>
+</header>
+
+<div class="container">
+
+  <!-- Capteurs -->
+  <div class="card">
+    <div class="card-title">Capteurs actifs</div>
+    <div id="sensorList"><span class="empty-state">Chargement…</span></div>
+    <div class="row-actions">
+      <button class="btn btn-primary" onclick="openAddSensor()">+ Ajouter capteur</button>
+    </div>
+  </div>
+
+  <!-- Layout widgets -->
+  <div class="card">
+    <div class="card-title">Disposition des widgets</div>
+    <div class="widget-list" id="widgetList"><span class="empty-state">Chargement…</span></div>
+    <div class="row-actions">
+      <button class="btn btn-primary" onclick="saveLayout()">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- Upload calendrier -->
+  <div class="card">
+    <div class="card-title">Calendrier</div>
+    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <span class="upload-icon">📅</span>
+      <div class="upload-label">Glisser un fichier .ics ici</div>
+      <div class="upload-sub">ou cliquer pour choisir</div>
+    </div>
+    <input type="file" id="fileInput" accept=".ics" style="display:none" onchange="uploadIcs(this.files[0])">
+    <div id="calendarStatus"></div>
+  </div>
+
+  <!-- Config -->
+  <div class="card">
+    <div class="card-title">Configuration</div>
+    <div id="configPanel"><span class="empty-state">Chargement…</span></div>
+    <div class="row-actions">
+      <button class="btn btn-primary" onclick="saveConfig()">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- Prévisualisation -->
+  <div class="card full">
+    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <span>Prévisualisation écran e-ink</span>
+      <button class="btn btn-muted" onclick="refreshPreview()">↻ Générer</button>
+    </div>
+    <div class="preview-frame" id="previewFrame">
+      <img id="previewImg" alt="Aperçu écran">
+      <div class="preview-placeholder" id="previewPlaceholder">Cliquer sur ↻ Générer pour voir l'aperçu</div>
+    </div>
+    <p style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:8px">
+      L'ESP32 reçoit un BMP 1-bit (noir/blanc + dithering).
+    </p>
+  </div>
+
+</div>
+
+<!-- Modal ajout capteur -->
+<div class="modal-backdrop" id="addSensorModal">
+  <div class="modal">
+    <h3>Nouveau capteur</h3>
+    <div class="form-field">
+      <label>ID capteur (sans espaces)</label>
+      <input type="text" id="newSensorId" placeholder="temp_salon">
+    </div>
+    <div class="form-field">
+      <label>Label affiché à l'écran</label>
+      <input type="text" id="newSensorLabel" placeholder="Température salon">
+    </div>
+    <div class="form-field">
+      <label>Unité</label>
+      <input type="text" id="newSensorUnit" placeholder="°C" value="%">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-muted" onclick="closeAddSensor()">Annuler</button>
+      <button class="btn btn-primary" onclick="addSensor()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// -------------------------------------------------
+// State local
+// -------------------------------------------------
+let sensors = {};
+let layout  = { widgets: [] };
+let config  = {};
+let dragSrc = null;
+
+// -------------------------------------------------
+// Init
+// -------------------------------------------------
+async function init() {
+  await Promise.all([loadSensors(), loadLayout(), loadConfig()]);
+  setInterval(loadSensors, 10000);
+}
+
+// -------------------------------------------------
+// Capteurs
+// -------------------------------------------------
+async function loadSensors() {
+  try {
+    const r = await fetch('/sensors');
+    sensors = await r.json();
+    renderSensors();
+    setStatus(true);
+  } catch { setStatus(false); }
+}
+
+function renderSensors() {
+  const el = document.getElementById('sensorList');
+  const entries = Object.entries(sensors);
+  if (!entries.length) {
+    el.innerHTML = '<span class="empty-state">Aucun capteur enregistré</span>';
+    return;
+  }
+  el.innerHTML = entries.map(([id, s]) => {
+    const val      = s.value != null ? `${s.value}` : '—';
+    const isStale  = !s.updated_at || (Date.now() - new Date(s.updated_at)) > 60000;
+    const timeAgo  = s.updated_at ? timeSince(new Date(s.updated_at)) : 'jamais';
+    return `<div class="sensor-item">
+      <div>
+        <div class="sensor-name">${s.label || id}</div>
+        <div class="sensor-meta">${id} · ${timeAgo}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="sensor-val">${val}<span style="font-size:12px;color:var(--muted);margin-left:2px">${s.unit||''}</span></div>
+        <div class="sensor-status ${isStale ? 'stale' : 'fresh'}"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddSensor()  { document.getElementById('addSensorModal').classList.add('open'); }
+function closeAddSensor() { document.getElementById('addSensorModal').classList.remove('open'); }
+
+async function addSensor() {
+  const id    = document.getElementById('newSensorId').value.trim();
+  const label = document.getElementById('newSensorLabel').value.trim();
+  const unit  = document.getElementById('newSensorUnit').value.trim();
+  if (!id) return;
+  await fetch(`/sensors/${id}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label, unit, value: null, updated_at: null }),
+  });
+  layout.widgets.push({ id, type: 'sensor', sensor_id: id, visible: true, order: layout.widgets.length });
+  await saveLayout(true);
+  closeAddSensor();
+  await loadSensors();
+  renderWidgets();
+  toast('Capteur ajouté');
+}
+
+// -------------------------------------------------
+// Layout
+// -------------------------------------------------
+async function loadLayout() {
+  const r = await fetch('/layout');
+  layout = await r.json();
+  renderWidgets();
+}
+
+function renderWidgets() {
+  const el = document.getElementById('widgetList');
+  el.innerHTML = layout.widgets.map((w, i) => `
+    <div class="widget-row" draggable="true"
+      ondragstart="dragStart(event,${i})"
+      ondragover="dragOver(event,${i})"
+      ondrop="drop(event,${i})">
+      <span class="drag-handle">⠿</span>
+      <div style="flex:1">
+        <div class="widget-label">${widgetName(w)}</div>
+        <div class="widget-type">${w.type}${w.sensor_id ? ' · ' + w.sensor_id : ''}</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" ${w.visible ? 'checked' : ''} onchange="toggleWidget(${i}, this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>`).join('');
+}
+
+function widgetName(w) {
+  if (w.type === 'calendar') return 'Calendrier';
+  if (w.type === 'clock')    return 'Horloge';
+  if (w.type === 'sensor') {
+    const s = sensors[w.sensor_id];
+    return `${s ? s.label : w.sensor_id}`;
+  }
+  return w.id;
+}
+
+function toggleWidget(idx, val) { layout.widgets[idx].visible = val; }
+
+function dragStart(e, i) { dragSrc = i; e.dataTransfer.effectAllowed = 'move'; }
+function dragOver(e, i)  { e.preventDefault(); }
+function drop(e, i) {
+  e.preventDefault();
+  if (dragSrc === i) return;
+  const moved = layout.widgets.splice(dragSrc, 1)[0];
+  layout.widgets.splice(i, 0, moved);
+  layout.widgets.forEach((w, idx) => w.order = idx);
+  dragSrc = null;
+  renderWidgets();
+}
+
+async function saveLayout(silent = false) {
+  await fetch('/layout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(layout),
+  });
+  if (!silent) toast('Disposition sauvegardée');
+}
+
+// -------------------------------------------------
+// Config
+// -------------------------------------------------
+async function loadConfig() {
+  const r = await fetch('/config');
+  config = await r.json();
+  renderConfig();
+}
+
+function renderConfig() {
+  document.getElementById('configPanel').innerHTML = `
+    <div class="config-row">
+      <label>Rafraîchissement écran (s)</label>
+      <input class="config-input" id="cfg_refresh" type="number" value="${config.refresh_seconds}" min="60">
+    </div>
+    <div class="config-row">
+      <label>Jours calendrier à afficher</label>
+      <input class="config-input" id="cfg_days" type="number" value="${config.calendar_days_ahead}" min="1" max="14">
+    </div>
+    <div class="config-row">
+      <label>Fuseau horaire</label>
+      <input class="config-input" id="cfg_tz" type="text" value="${config.timezone}" style="width:160px;text-align:left">
+    </div>`;
+}
+
+async function saveConfig() {
+  config.refresh_seconds     = parseInt(document.getElementById('cfg_refresh').value);
+  config.calendar_days_ahead = parseInt(document.getElementById('cfg_days').value);
+  config.timezone            = document.getElementById('cfg_tz').value;
+  await fetch('/config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  });
+  toast('Configuration sauvegardée');
+}
+
+// -------------------------------------------------
+// Upload ICS
+// -------------------------------------------------
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  uploadIcs(e.dataTransfer.files[0]);
+});
+
+async function uploadIcs(file) {
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  const r    = await fetch('/calendar/upload', { method: 'POST', body: fd });
+  const data = await r.json();
+  document.getElementById('calendarStatus').textContent = `✓ ${data.events_count} événements chargés`;
+  toast(`${data.events_count} événements importés`);
+}
+
+// -------------------------------------------------
+// Preview
+// -------------------------------------------------
+async function refreshPreview() {
+  const img         = document.getElementById('previewImg');
+  const placeholder = document.getElementById('previewPlaceholder');
+  placeholder.textContent  = 'Génération en cours…';
+  placeholder.style.display = 'block';
+  img.style.display         = 'none';
+  // /display/preview-png retourne le PNG couleurs (pas le BMP 1-bit)
+  img.src = `/display/preview-png?t=${Date.now()}`;
+  img.onload  = () => { img.style.display = 'block'; placeholder.style.display = 'none'; };
+  img.onerror = () => { placeholder.textContent = '⚠ Erreur de génération'; };
+}
+
+// -------------------------------------------------
+// Helpers
+// -------------------------------------------------
+function timeSince(date) {
+  const s = Math.floor((Date.now() - date) / 1000);
+  if (s < 60)   return `il y a ${s}s`;
+  if (s < 3600) return `il y a ${Math.floor(s/60)}min`;
+  return `il y a ${Math.floor(s/3600)}h`;
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>
