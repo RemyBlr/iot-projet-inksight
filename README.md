@@ -1,4 +1,4 @@
-# iot-projet-inksight
+# Pi IoT Dashboard
 
 Serveur local qui affiche un calendrier et des données capteurs sur un écran e-ink TRMNL OG.
 
@@ -24,23 +24,38 @@ Ouvrir `http://localhost:8000`.
 
 ## Structure
 
-TODO completer
 ```
 main.py                  # Serveur FastAPI — tous les endpoints
-...
+modules/
+  calendar_parser.py     # Parsing fichiers .ics
+  mqtt_client.py         # Réception données capteurs via MQTT
+  renderer.py            # HTML → PNG (Playwright) → BMP 1-bit (Pillow)
+  state.py               # État en RAM (pas de base de données)
+static/
+  dashboard.css          # Styles CSS du dashboard
+  dashboard.js           # Logique frontend (fetch API, interactions)
+  index.html             # UI de gestion
+  screen.css             # Styles spécifiques à l'écran e-ink
+firmware/
+  TODO
 ```
 
 ## Endpoints principaux
 
-| Endpoint | Usage |
-|---|---|
-| `GET /` | UI de gestion |
-| `GET /display/image` | BMP 1-bit pour l'ESP32 |
-| `GET /display/preview-png` | PNG couleur pour la prévisualisation |
-| `GET /display/config` | Timer + URL image pour l'ESP32 |
-| `POST /calendar/upload` | Upload fichier `.ics` |
-| `GET /sensors` | Valeurs capteurs actuelles |
-| `POST /sensors/{id}` | Mise à jour manuelle d'un capteur |
+| Endpoint                   | Usage                                              |
+|----------------------------|----------------------------------------------------|
+| `GET /`                    | UI de gestion                                      |
+| `GET /display/image`       | BMP 1-bit pour l'ESP32                             |
+| `GET /display/preview-png` | PNG couleurs pour la prévisualisation              |
+| `GET /display/preview`     | Prévisualtion de l'écran e-ink pour le debug       |
+| `POST /calendar/upload`    | Upload fichier `.ics`                              |
+| `GET /sensors`             | Valeurs capteurs actuelles                         |
+| `POST /sensors/{id}`       | Mise à jour manuelle d'un capteur                  |
+| `GET /config`              | Configuration actuelle (variables d'environnement) |
+| `POST /config`             | Mise à jour de la configuration                    |
+| `GET /layout`              | Layout de l'app                                    |
+| `POST /layout`             | Mise à jour du layout de l'app                     |
+| `GET /layout/presets`      | Liste tous les presets disponibles                 |
 
 ## Variables d'environnement (`.env`)
 
