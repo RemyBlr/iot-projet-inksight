@@ -37,7 +37,7 @@ async def start_mqtt_client(state: "AppState"):
                 async for message in client.messages:
                     _handle_message(state, str(message.topic), message.payload)
         except Exception as e:
-            print(f"MQTT erreur : {e} — reconnexion dans 5s")
+            print(f"MQTT erreur : {e}, reconnexion dans 5s")
             await asyncio.sleep(5)
 
 

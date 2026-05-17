@@ -17,9 +17,9 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-from modules.state import AppState
+from modules.state import AppState, LAYOUT_PRESETS
 from modules.calendar_parser import parse_ics
-from modules.renderer import render_screen_to_image
+from modules.renderer import render_screen_to_image, render_screen_to_png, build_screen_html
 from modules.mqtt_client import start_mqtt_client
 
 # Config depuis .env
@@ -147,6 +147,17 @@ async def update_layout(payload: dict):
     """
     state.layout = payload
     return {"status": "ok"}
+
+
+@app.get("/layout/presets")
+async def get_layout_presets():
+    """
+    Liste tous les presets de disposition disponibles
+    """
+    return {
+        pid: {"label": p["label"], "description": p["description"]}
+        for pid, p in LAYOUT_PRESETS.items()
+    }
 
 
 ######################################################################
