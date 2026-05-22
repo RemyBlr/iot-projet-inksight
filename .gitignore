@@ -1,5 +1,6 @@
 .DS_Store
 .idea/
 .env
+config.h
 __pycache__/
 modules/__pycache__/

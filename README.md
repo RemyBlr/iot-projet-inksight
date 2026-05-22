@@ -25,19 +25,24 @@ Ouvrir `http://localhost:8000`.
 ## Structure
 
 ```
-main.py                  # Serveur FastAPI — tous les endpoints
+.env.example                    # Exemple de configuration
+main.py                         # Serveur FastAPI — tous les endpoints
 modules/
-  calendar_parser.py     # Parsing fichiers .ics
-  mqtt_client.py         # Réception données capteurs via MQTT
-  renderer.py            # HTML → PNG (Playwright) → BMP 1-bit (Pillow)
-  state.py               # État en RAM (pas de base de données)
+  calendar_parser.py            # Parsing fichiers .ics
+  mqtt_client.py                # Réception données capteurs via MQTT
+  renderer.py                   # HTML → PNG (Playwright) → BMP 1-bit (Pillow)
+  state.py                      # État en RAM (pas de base de données)
 static/
-  dashboard.css          # Styles CSS du dashboard
-  dashboard.js           # Logique frontend (fetch API, interactions)
-  index.html             # UI de gestion
-  screen.css             # Styles spécifiques à l'écran e-ink
+  dashboard.css                 # Styles CSS du dashboard
+  dashboard.js                  # Logique frontend (fetch API, interactions)
+  index.html                    # UI de gestion
+  screen.css                    # Styles spécifiques à l'écran e-ink
 firmware/
-  TODO
+  nano_rp2040_sensors/
+    config.h.example            # Exemple de configuration pour le Nano RP2040
+    nano_rp2040_sensors.ino     # Code Arduino pour le Nano RP2040 Connect
+    utils.h                     # Fonctions utilitaires, wifi et mqtt
+    
 ```
 
 ## Endpoints principaux

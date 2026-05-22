@@ -159,7 +159,7 @@ def _render_sensor_widget(sensor: dict, sensor_id: str) -> str:
     unit = sensor.get("unit", "")
     label = sensor.get("label", sensor_id)
     updated = sensor.get("updated_at", "")
-    display_val = f"{value:.0f}" if value is not None else "—"
+    display_val = f"{value:.1f}" if value is not None else "—"
     updated_str = _format_updated(updated)
 
     return f"""
