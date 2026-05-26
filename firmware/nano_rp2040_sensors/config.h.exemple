@@ -1,0 +1,9 @@
+// shared/config.h.example
+// Copier en shared/config.h et remplir les valeurs
+
+#pragma once
+
+#define WIFI_SSID     "MonReseau"
+#define WIFI_PASSWORD "MonMotDePasse"
+#define MQTT_BROKER   "192.168.1.XX"
+#define MQTT_PORT     1883

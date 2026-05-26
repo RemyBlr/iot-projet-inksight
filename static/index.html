@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InkSight — Gestion</title>
+<link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">InkSight <span>/ pi dashboard</span></div>
+</header>
+
+<div class="container">
+
+  <!-- Capteurs actifs -->
+  <div class="card">
+    <div class="card-title">
+      <span>Capteurs actifs</span>
+    </div>
+    <div id="sensorList"><span class="empty-state">Chargement…</span></div>
+    <div class="row-actions">
+      <button class="btn btn-primary" onclick="openModal('addSensorModal')">+ Nouveau capteur</button>
+    </div>
+  </div>
+
+  <!-- Widgets à l'écran -->
+  <div class="card">
+    <div class="card-title">
+      <span>Widgets à l'écran</span>
+      <button class="btn btn-primary btn-sm" onclick="openAddWidgetModal()">+ Ajouter</button>
+    </div>
+    <div class="widget-list" id="widgetList"><span class="empty-state">Chargement…</span></div>
+    <div class="row-actions">
+      <button class="btn btn-primary" onclick="saveLayout()">Enregistrer</button>
+    </div>
+    <p class="section-hint">Glisser pour réordonner, c = colonnes, r = lignes occupées</p>
+  </div>
+
+  <!-- Calendrier -->
+  <div class="card">
+    <div class="card-title">Calendrier</div>
+    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <span class="upload-icon">📅</span>
+      <div class="upload-label">Glisser un fichier .ics ici</div>
+      <div class="upload-sub">ou cliquer pour choisir</div>
+    </div>
+    <input type="file" id="fileInput" accept=".ics" style="display:none" onchange="uploadIcs(this.files[0])">
+    <div id="calendarStatus"></div>
+  </div>
+
+  <!-- Configuration -->
+  <div class="card">
+    <div class="card-title">Configuration</div>
+    <div id="configPanel"><span class="empty-state">Chargement…</span></div>
+    <div class="row-actions">
+      <button class="btn btn-primary" onclick="saveConfig()">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- Disposition de la grille -->
+  <div class="card full">
+    <div class="card-title">
+      <span>Disposition de la grille</span>
+      <button class="btn btn-primary btn-sm" onclick="saveLayout()">Appliquer</button>
+    </div>
+    <div class="preset-grid" id="presetGrid">
+      <span class="empty-state">Chargement…</span>
+    </div>
+  </div>
+
+  <!-- Prévisualisation -->
+  <div class="card full">
+    <div class="card-title">
+      <span>Prévisualisation écran e-ink</span>
+      <button class="btn btn-muted" onclick="refreshPreview()">↻ Générer</button>
+    </div>
+    <div class="preview-frame">
+      <img id="previewImg" alt="Aperçu écran">
+      <div class="preview-placeholder" id="previewPlaceholder">Cliquer sur ↻ Générer pour voir l'aperçu</div>
+    </div>
+    <p class="section-hint" style="margin-top:8px">
+      L'ESP32 reçoit un BMP 1-bit (dithering Floyd-Steinberg).
+    </p>
+  </div>
+
+</div>
+
+<!-- Modale : nouveau capteur -->
+<div class="modal-backdrop" id="addSensorModal">
+  <div class="modal">
+    <h3>Nouveau capteur</h3>
+    <div class="form-field">
+      <label>ID (sans espaces — ex: temp_salon)</label>
+      <input type="text" id="newSensorId" placeholder="temp_salon" autocomplete="off">
+    </div>
+    <div class="form-field">
+      <label>Label affiché</label>
+      <input type="text" id="newSensorLabel" placeholder="Température salon" autocomplete="off">
+    </div>
+    <div class="form-field">
+      <label>Unité</label>
+      <input type="text" id="newSensorUnit" placeholder="%" autocomplete="off">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-muted" onclick="closeModal('addSensorModal')">Annuler</button>
+      <button class="btn btn-primary" id="btnCreateSensor" onclick="addSensor()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale : ajouter un widget capteur à l'écran -->
+<div class="modal-backdrop" id="addWidgetModal">
+  <div class="modal">
+    <h3>Ajouter un capteur à l'écran</h3>
+    <div id="addWidgetList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-muted" onclick="closeModal('addWidgetModal')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale : confirmation suppression capteur -->
+<div class="modal-backdrop" id="confirmDeleteModal">
+  <div class="modal">
+    <h3>Supprimer le capteur</h3>
+    <p class="confirm-msg" id="confirmDeleteMsg"></p>
+    <p class="confirm-sub" style="margin-top:6px">
+      Le widget correspondant sera également retiré de l'écran.
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-muted" onclick="closeModal('confirmDeleteModal')">Annuler</button>
+      <button class="btn btn-danger" id="btnConfirmDelete">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/static/dashboard.js"></script>
+</body>
+</html>

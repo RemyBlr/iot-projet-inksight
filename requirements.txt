@@ -1,6 +1,6 @@
 # Python
-fastapi>=0.110.0
-uvicorn[standard]>=0.29.0
+fastapi>=0.110.0            # Framework web léger et rapide
+uvicorn[standard]>=0.29.0   # Serveur ASGI pour FastAPI
 playwright>=1.44.0          # Rendu HTML → PNG
 aiomqtt>=1.2.0              # Client MQTT async
 python-multipart>=0.0.9     # Upload fichiers FastAPI
@@ -28,6 +28,8 @@ python-dotenv>=1.0.0        # Lecture du fichier .env
 #    python main.py
 #    → http://localhost:8000
 #
+#
+#
 # ══════════════════════════════════════════════════════════════════════════
 # INSTALLATION RASPBERRY PI 5 (prod)
 # ══════════════════════════════════════════════════════════════════════════
@@ -44,12 +46,14 @@ python-dotenv>=1.0.0        # Lecture du fichier .env
 #
 # 4. python main.py
 #
-# ─── Nano RP2040 (MicroPython) ────────────────────────────────────────────
+#
+#
+# Nano RP2040 (MicroPython)
 # Flasher MicroPython : https://micropython.org/download/ARDUINO_NANO_RP2040_CONNECT/
 # mpremote connect /dev/ttyACM0 mip install umqtt.simple
 # mpremote connect /dev/ttyACM0 cp firmware/nano_rp2040_sensor.py :main.py
 #
-# ─── ESP32 / TRMNL (Arduino) ──────────────────────────────────────────────
+# ESP32 / TRMNL (Arduino)
 # Librairies Arduino IDE :
 #   - GxEPD2 by Jean-Marc Zingg
 #   - ArduinoJson by Benoit Blanchon
